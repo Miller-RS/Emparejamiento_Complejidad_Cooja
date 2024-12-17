@@ -51,3 +51,4 @@ static void multiword_mul(const uint64_multi_t *a, const uint64_multi_t *b,
         high->words[i] = (uint16_t)temp[i+4];
     }
 }
+Para generar un primo grande se necesitan test de primalidad repetidos, cada uno con múltiples exponentiaciones modulares (cada exponentiación es O(n² log n) debido a las multiplicaciones repetidas). Esto vuelve el proceso extremadamente lento.
