@@ -1,26 +1,39 @@
+# Complejidad de Generar Primos Grandes y Calcular Emparejamientos Bilineales en MSP430 (16 bits)
+
+Este documento explica por qué resulta complejo generar números primos de gran magnitud (mayores a 32 bits) y realizar emparejamientos bilineales en una arquitectura MSP430 de 16 bits, a través de bloques de código en C que ilustran las dificultades técnicas. Las porciones de código están pensadas para ser compiladas con `msp430-gcc` y ejecutadas en el entorno Contiki/Cooja, característico de dispositivos IoT con recursos limitados.
+
+## Contexto
+
+- **Arquitectura MSP430 (16 bits):**  
+  Los dispositivos con esta arquitectura poseen registros y ancho de datos limitados. Cuando se requieren números mayores a 32 bits, es necesario implementar aritmética multipalabra, dividiendo cada número grande en varias “palabras” de 16 bits.
+
+- **Generación de Primos Grandes:**  
+  Involucra tests de primalidad (e.g., Miller-Rabin), que requieren exponentiaciones modulares sobre números grandes. Esto se traduce en una enorme cantidad de operaciones de multiplicación modular y reducción, cada una de las cuales es O(n²) respecto al número de palabras.
+
+- **Emparejamientos Bilineales:**  
+  Estas operaciones, fundamentales en criptografía avanzada (e.g. esquemas basados en atributos), requieren cálculos sobre campos finitos grandes, incluyendo multiplicaciones y exponentiaciones modulares múltiples. El costo puede ser aún mayor que el de la simple generación de primos, acercándose a O(n² log n) o más, debido al mayor número de operaciones encadenadas.
+
+## Ejemplo de Código: Multiplicación Multipalabra para Primos Grandes
+
+El siguiente fragmento ilustra la multiplicación de números de 64 bits (4 palabras de 16 bits) en MSP430. Para 128 bits o más, la complejidad se incrementa drásticamente.
+
 ```c
 #include <stdint.h>
 #include <stdbool.h>
 
-// Supongamos que necesitamos manejar un número de 64 bits en MSP430
-// La arquitectura de 16 bits no soporta nativamente 64 bits, así que debemos dividirlo.
 typedef struct {
-    uint16_t words[4]; // 4 x 16 bits = 64 bits
+    uint16_t words[4]; // 64 bits divididos en 4 palabras de 16 bits
 } uint64_multi_t;
 
-// Función de multiplicación multipalabra (64-bit x 64-bit = 128-bit)
-static void multiword_mul(const uint64_multi_t *a, const uint64_multi_t *b, uint64_multi_t *low, uint64_multi_t *high) {
-    // Esta función simula multiplicación de 64 bits con aritmética de 16 bits.
-    // Multiplicamos cada palabra de a por cada palabra de b y sumamos los acarreos.
-    // Esto se asemeja a O(n²) complejidad, donde n es la cantidad de palabras.
-    // Para tamaños mayores (e.g., 128 o 256 bits), esta complejidad crece rápidamente.
-
+static void multiword_mul(const uint64_multi_t *a, const uint64_multi_t *b,
+                          uint64_multi_t *low, uint64_multi_t *high) {
+    // Multiplicación multipalabra O(n²), donde n es el número de palabras.
     uint32_t temp[8] = {0};
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             uint32_t mul = (uint32_t)a->words[i] * (uint32_t)b->words[j];
             temp[i+j] += mul;
-            // Propagación de acarreo
+            // Propagación del acarreo
             for (int k = i+j; k < 7 && temp[k] > 0xFFFF; k++) {
                 uint32_t carry = temp[k] >> 16;
                 temp[k] &= 0xFFFF;
@@ -29,29 +42,12 @@ static void multiword_mul(const uint64_multi_t *a, const uint64_multi_t *b, uint
         }
     }
 
-    // La mitad baja (64 bits)
+    // Parte baja (64 bits)
     for (int i = 0; i < 4; i++) {
         low->words[i] = (uint16_t)temp[i];
     }
-    // La mitad alta (64 bits)
+    // Parte alta (64 bits)
     for (int i = 0; i < 4; i++) {
         high->words[i] = (uint16_t)temp[i+4];
     }
 }
-
-// Exponentiación modular (base^exp mod m) con números grandes
-static void multiword_modexp(uint64_multi_t base, uint64_multi_t exp, uint64_multi_t m) {
-    // Implementar un test de primalidad como Miller-Rabin requiere
-    // múltiple exponentiación modular, cada una implicando
-    // decenas o cientos de multiplicaciones multipalabra.
-
-    // Aquí solo se muestra la idea: cada multiplicación es O(n²).
-    // Para un número de 128 bits (8 words), el costo es aún mayor.
-    // Por cada bit de exp, hacemos al menos una multiplicación multipalabra.
-    // Esto escala a O(n² log n) si consideramos el tamaño del número.
-}
-
-// Cuando intentamos generar un primo grande, repetimos el test de primalidad
-// múltiples veces con diferentes bases para aumentar la certeza.
-// Cada prueba involucra múltiples modexp, y cada modexp es O(n² log n).
-// En MSP430, esto implica tiempos de ejecución muy elevados.
