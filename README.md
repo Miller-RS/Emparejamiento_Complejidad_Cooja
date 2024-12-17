@@ -1,6 +1,6 @@
 # Complejidad de Generar Primos Grandes y Calcular Emparejamientos Bilineales en MSP430 (16 bits)
 
-Este documento explica por qué resulta complejo generar números primos de gran magnitud (mayores a 32 bits) y realizar emparejamientos bilineales en una arquitectura MSP430 de 16 bits, a través de bloques de código en C que ilustran las dificultades técnicas. Las porciones de código están pensadas para ser compiladas con `msp430-gcc` y ejecutadas en el entorno Contiki/Cooja, característico de dispositivos IoT con recursos limitados.
+Por qué resulta complejo generar números primos de gran magnitud (mayores a 32 bits) y realizar emparejamientos bilineales en una arquitectura MSP430 de 16 bits, a través de bloques de código en C que ilustran las dificultades técnicas. Las porciones de código están pensadas para ser compiladas con `msp430-gcc` y ejecutadas en el entorno Contiki/Cooja, característico de dispositivos IoT con recursos limitados.
 
 ## Contexto
 
